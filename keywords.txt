@@ -1,12 +1,32 @@
-SerialDXL   KEYWORD1
+#######################################
+# Syntax Coloring Map for SerialDXL
+####################################### 
+# Class
+#######################################
+SerialDXL		KEYWORD1
+DeviceDXL		KEYWORD1
+MMap			KEYWORD1
+Access			KEYWORD1
+UInt8			KEYWORD1
+UInt8NV			KEYWORD1
+Variable		KEYWORD1
+VariablePtr		KEYWORD1
 
-DeviceDXL   KEYWORD1
-setRX   KEYWORD2
-setTX   KEYWORD2
-initRAM     KEYWORD2
-initEEPROM  KEYWORD2
+#######################################
+# Methods and Functions 
+#######################################	
+init		KEYWORD2
+onReset		KEYWORD2
+serialize	KEYWORD2
+deserialize	KEYWORD2
+process		KEYWORD2
+setRX		KEYWORD2
+setTX		KEYWORD2
+onReset		KEYWORD2
+update		KEYWORD2
 
-MMap        KEYWORD1
-mmap_entry_t    KEYWORD1
-MMAP_EEPROM LITERAL1
-MMAP_RW     LITERAL1
+#######################################
+# Constants
+#######################################
+RW						LITERAL1
+DEVICEDXL_MIN_BUFFER	LITERAL1
