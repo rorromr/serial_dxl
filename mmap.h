@@ -6,6 +6,7 @@
 #define MMap_h
 //------------------------------------------------------------------------------
 #include <avr/eeprom.h>
+#include <stdint.h>
 //------------------------------------------------------------------------------
 /** Memory map max size */
 static const uint8_t MMAP_MAX_SIZE = 64U;
@@ -46,8 +47,8 @@ namespace MMap
 
 /**
  * @brief Access class for read and write permission check
+ * Implementation try to emulate scoped enumerations behavior
  */
- // Implementation try to emulate scoped enumerations behavior
 struct Access
 {
   enum type
@@ -60,7 +61,23 @@ struct Access
   private:
     type value_;
 };
-
+//------------------------------------------------------------------------------
+/**
+ * @brief Storage class for RAM or EEPROM check
+ * Implementation try to emulate scoped enumerations behavior
+ */
+struct Storage
+{
+  enum type
+  {
+    RAM = 0U,
+    EEPROM = 1U
+  };
+  Storage(type t) : value_(t) {}
+  operator type() const { return value_; }
+  private:
+    type value_;
+};
 //------------------------------------------------------------------------------
 /**
  * @class Variable
@@ -69,48 +86,25 @@ struct Access
 class Variable
 {
   public:
-    Variable(uint8_t address, Access access = Access::RW):
-      address_(address),
-      access_(access) {};
+    Variable(Access access = Access::RW, Storage storage = Storage::RAM):
+      address_(0U),
+      access_(access),
+      storage_(storage) {};
 
     virtual uint8_t serialize(uint8_t *outbuffer) const = 0;
     virtual uint8_t deserialize(uint8_t *inbuffer) = 0;
-    virtual void load() = 0;
-    virtual void save() const = 0;
     virtual void setDefault() {};
-    static uint8_t size() {return 0;}
+    static uint8_t size() {return 0U;}
   
-  protected:
-    /**
-     * Address in message buffer
-     */
-    const uint8_t address_;
-    /**
-     * Access type
-     */
-    const Access access_;
-    
-};
-
-typedef Variable* VariablePtr;
-
-/**
- * @class Variable
- * @brief Virtual base class for MMap non-volatile variables.
- */
-class VariableNV : public Variable
-{
   public:
-    VariableNV(uint8_t address, uint8_t nv_address, Access access = Access::RW):
-      Variable(address, access),
-      nv_address_(nv_address) {};
-  
+    uint8_t address_; ///< Address in message buffer
   protected:
-    /**
-     * Non volatile (EEPROM) memory address
-     */
-    const uint8_t nv_address_;
+    const Access access_; ///< Access type
+    const Storage storage_; ///< Storage type
 };
+
+/** Variable pointer typedef */
+typedef Variable* VariablePtr;
 
 /**
  * @class UInt8
@@ -131,8 +125,8 @@ class UInt8: public Variable
      * @param max Max value
      * @param def Default value
      */
-    UInt8(uint8_t address, Access access = Access::RW, uint8_t min = 0U, uint8_t max = 255U, uint8_t def = 0U):
-      Variable(address, access),
+    UInt8(Access access = Access::RW, Storage storage = Storage::RAM, uint8_t min = 0U, uint8_t max = 255U, uint8_t def = 0U):
+      Variable(access, storage),
       min_(min), max_(max), def_(def), data(def) {}
     
     /**
@@ -169,8 +163,6 @@ class UInt8: public Variable
     }
 
 
-    virtual void load() { this->data = this->def_; }
-    virtual void save() const {}
     virtual void setDefault() { this->data = this->def_; }
 
     static uint8_t size()
@@ -179,18 +171,9 @@ class UInt8: public Variable
     }
 
   private:
-    /**
-     * Min value of data
-     */
-    const uint8_t min_;
-    /**
-     * Max value of data
-     */
-    const uint8_t max_;
-    /**
-     * Default value of data
-     */
-    const uint8_t def_;
+    const uint8_t min_; ///< Min value of data
+    const uint8_t max_; ///< Max value of data
+    const uint8_t def_; ///< Default value of data
 };
 
 /**
@@ -256,7 +239,6 @@ class UInt8NV: public VariableNV
     const uint8_t min_, max_, def_;
 };
 
-
 //------------------------------------------------------------------------------
 /**
  * @class MMap
@@ -266,7 +248,9 @@ class MMap
 {
   public:
     MMap(uint8_t bufSize):
+    msgBuffer_(NULL),
     bufN_(bufSize),
+    varList_(NULL),
     varN_(0U)
     {
       // Check size
@@ -280,10 +264,9 @@ class MMap
     }
 
 
-    inline __attribute__((always_inline))
-    void registerVariable(VariablePtr var)
+    inline void registerVariable(VariablePtr var)
     {
-      varList_[varN_++]=var;
+      varList_[varN_++] = var;
     }
     
     uint8_t serialize()
