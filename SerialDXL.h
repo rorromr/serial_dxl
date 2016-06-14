@@ -2,6 +2,8 @@
  * @file
  * @brief Dynamixel Device Library
  */
+ #include "mmap.h"
+#define SerialDXL_h
 #ifndef SerialDXL_h
 #define SerialDXL_h
 //------------------------------------------------------------------------------
@@ -18,7 +20,7 @@
 #endif
 //------------------------------------------------------------------------------
 #include <avr/sleep.h>
-#include "mmap.h"
+
 #include <Arduino.h>
 //------------------------------------------------------------------------------
 #define DEVICEDXL_MIN_BUFFER 6
