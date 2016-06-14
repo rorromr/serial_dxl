@@ -17,16 +17,6 @@ static const uint8_t MMAP_MAX_SIZE = 64U;
 uint8_t badMMapLength(void)
   __attribute__((error("MMAP length too large")));
 //------------------------------------------------------------------------------
-/**
- * @class mmap_entry_t
- * @brief Entry type for memory map.
- */
-typedef struct
-{
-  uint8_t *value;
-  uint8_t param;
-} mmap_entry_t;
-//------------------------------------------------------------------------------
 // Set MMAP entry macro
 #define MMAP_ENTRY(mmap, var, parameter) {(mmap).value = &(var); (mmap).param = (parameter);}
 // Saturation function
@@ -35,8 +25,6 @@ typedef struct
 //------------------------------------------------------------------------------
 namespace MMap
 {
-
-
 /**
  * @brief Access class for read and write permission check
  * Implementation try to emulate scoped enumerations behavior
@@ -84,8 +72,8 @@ class Variable
 
     virtual uint8_t serialize(uint8_t *outbuffer) const = 0;
     virtual uint8_t deserialize(uint8_t *inbuffer) = 0;
-    virtual void setDefault() {};
-    static uint8_t size() {return 0U;}
+    virtual void setDefault();
+    virtual uint8_t size() = 0;
   
   public:
     const Access access_; ///< Access type
@@ -153,7 +141,7 @@ class UInt8: public Variable
 
     virtual void setDefault() { this->data = this->def_; }
 
-    static uint8_t size()
+    virtual uint8_t size()
     {
       return sizeof(data);
     }
@@ -217,7 +205,8 @@ class MMap
 
     void init()
     {
-      msgBuffer_ = new uint8_t[ramOffset_];
+      bufN_ = ramOffset_;
+      msgBuffer_ = new uint8_t[bufN_];
     }
     
     uint8_t serialize()
@@ -240,12 +229,20 @@ class MMap
       return buffer - msgBuffer_;
     }
 
-    /*
+    
     void load()
     {
       for (uint8_t i = 0; i < varN_; ++i)
       {
-        varList_[i].var->load();
+        VariablePtr& var = varList_[i].var;
+        if (var->storage_ == Storage::RAM)
+        {
+          var->setDefault();
+        }
+        else
+        {
+          ;
+        } 
       }
     }
 
@@ -253,10 +250,14 @@ class MMap
     {
       for (uint8_t i = 0; i < varN_; ++i)
       {
-        varList_[i].var->save();
+        if (varList_[i].var->storage_ == Storage::EEPROM)
+        {
+          ;
+          //varList_[i].var->save();
+        }
       }
     }
-    */
+    
     
     void setDefault()
     {
@@ -286,7 +287,7 @@ class MMap
     }
 
 
-  private:
+  public:
     // Message buffer
     uint8_t *msgBuffer_;
     uint8_t eepromBuffer_[4];
@@ -297,7 +298,7 @@ class MMap
     // Variable length
     uint8_t varN_;
     uint8_t varCount_;
-    // EEṔROM offset
+    // EEPROM offset
     uint8_t eepromOffset_;
     // RAM offset
     uint8_t ramOffset_;
