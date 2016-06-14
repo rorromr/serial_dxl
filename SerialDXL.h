@@ -2,7 +2,8 @@
  * @file
  * @brief Dynamixel Device Library
  */
- #include "mmap.h"
+#define __STDC_LIMIT_MACROS
+#include "mmap.h"
 #define SerialDXL_h
 #ifndef SerialDXL_h
 #define SerialDXL_h

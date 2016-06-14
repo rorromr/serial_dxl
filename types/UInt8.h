@@ -5,6 +5,7 @@
 #ifndef UINT8_H
 #define UINT8_H
 
+#define __STDC_LIMIT_MACROS
 #include <stdint.h>
 #include "base.h"
 
@@ -17,8 +18,9 @@ namespace MMap
    */
   class UInt8: public Variable
   {
+    public:
+      uint8_t data;
 
-  public:
     /**
     * @brief UInt8 contructor
     * 
@@ -28,7 +30,8 @@ namespace MMap
     * @param max Max value
     * @param def Default value
     */
-    UInt8(Access access = Access::RW, Storage storage = Storage::RAM, uint8_t min = 0U, uint8_t max = 255U, uint8_t def = 0U):
+    UInt8(Access access = Access::RW, Storage storage = Storage::RAM,
+        uint8_t min = 0U, uint8_t max = UINT8_MAX, uint8_t def = 0U):
       Variable(access, storage),
       min_(min), max_(max), def_(def), data(def) {}
     
@@ -66,15 +69,15 @@ namespace MMap
     }
 
 
-    virtual void setDefault() { this->data = this->def_; }
+    virtual void setDefault()
+    {
+      this->data = this->def_;
+    }
 
     virtual uint8_t size()
     {
       return sizeof(data);
     }
-
-  public:
-    uint8_t data;
 
   private:
     const uint8_t min_; ///< Min value of data

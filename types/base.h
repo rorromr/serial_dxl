@@ -4,7 +4,9 @@
  */
 #ifndef BASE_H
 #define BASE_H
- 
+
+#include <stdint.h>
+
 // Set MMAP entry macro
 #define MMAP_ENTRY(mmap, var, parameter) {(mmap).value = &(var); (mmap).param = (parameter);}
 // Saturation function

@@ -3,6 +3,7 @@
 #include <assert.h>
 #include "SerialDXL.h"
 #include "types/UInt8.h"
+#include "types/Int32.h"
 
 MMap::UInt8 foo(MMap::Access::RW, MMap::Storage::RAM, 10, 200, 25);
 MMap::UInt8 bar(MMap::Access::R, MMap::Storage::RAM, 10, 200, 50);
