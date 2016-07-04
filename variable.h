@@ -1,19 +1,26 @@
 /**
- * @file
- * @brief UIint8
+ * @file MMAP Variables
  */
 #ifndef BASE_H
 #define BASE_H
 
 #include <stdint.h>
 
-// Set MMAP entry macro
-#define MMAP_ENTRY(mmap, var, parameter) {(mmap).value = &(var); (mmap).param = (parameter);}
-// Saturation function
-#define MMAP_SAT(x, min, max) ( ((x) > max) ? max : ( ((x) < min) ? min : (x) ) )
-
 namespace MMap
 {
+
+/**
+ * @brief Saturation function
+ * 
+ * @param a Variable
+ * @tparam min Min value
+ * @tparam max Max value
+ */
+template<typename T, T min, T max>
+inline void saturation(T& a)
+{
+  a = a > max ? max : ( a < min ? min : a );
+}
 /**
  * @brief Access class for read and write permission check
  * Implementation try to emulate scoped enumerations behavior
@@ -49,13 +56,13 @@ struct Storage
 };
 //------------------------------------------------------------------------------
 /**
- * @class Variable
+ * @class ContainerBase
  * @brief Virtual base class for MMap variables.
  */
-class Variable
+class VariableBase
 {
   public:
-    Variable(Access access = Access::RW, Storage storage = Storage::RAM):
+    VariableBase(Access access, Storage storage):
       access_(access),
       storage_(storage) {};
 
@@ -69,8 +76,49 @@ class Variable
     const Storage storage_; ///< Storage type
 };
 
-/** Variable pointer typedef */
-typedef Variable* VariablePtr;
+typedef VariableBase* VariableBasePtr;
+
+template <typename MessageT, typename T, T min, T max, T def>
+class Variable : public VariableBase
+{
+  public:
+    Variable(Access access, Storage storage):
+      VariableBase(access, storage),
+      C(),
+      data(C.data)
+    {}
+
+    uint8_t serialize(uint8_t *outbuffer) const
+    {
+      return C.serialize(outbuffer);
+    }
+    
+    uint8_t deserialize(uint8_t *inbuffer)
+    {
+      // Check for read only
+      if (access_ == Access::R)
+        return sizeof(C.data);
+      uint8_t size = C.deserialize(inbuffer);
+      saturation<T, min, max>(C.data);
+      return size;
+    }
+
+    void setDefault()
+    {
+      C.data = def;
+    }
+    
+    inline uint8_t size()
+    {
+      return sizeof(C.data);
+    }
+
+  public:
+    MessageT C;
+    T& data;
+};
+
 }
+
 
 #endif
