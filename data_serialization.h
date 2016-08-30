@@ -109,7 +109,7 @@ class UInt32: public Message
 
     virtual uint8_t serialize(uint8_t *outbuffer) const
     {
-      uint32_t offset = 0;
+      uint8_t offset = 0;
       *(outbuffer + offset + 0U) = (this->data >> (8U * 0U)) & 0xFF;
       *(outbuffer + offset + 1U) = (this->data >> (8U * 1U)) & 0xFF;
       *(outbuffer + offset + 2U) = (this->data >> (8U * 2U)) & 0xFF;
@@ -130,6 +130,39 @@ class UInt32: public Message
     }
 
     typedef uint32_t type;
+};
+
+//---------------------------------------------------------------------------
+/**
+ * UInt16
+ */
+class UInt16 : public Message
+{
+  public:
+    uint16_t data;
+
+  UInt16(): data(0U) {}
+
+  virtual uint8_t serialize(uint8_t *outbuffer) const
+  {
+    uint8_t offset = 0;
+    *(outbuffer + offset + 0) = (this->data >> (8 * 0)) & 0xFF;
+    *(outbuffer + offset + 1) = (this->data >> (8 * 1)) & 0xFF;
+    offset += sizeof(this->data);
+    return offset;
+  }
+
+  virtual uint8_t deserialize(unsigned char *inbuffer)
+  {
+    uint8_t offset = 0;
+    this->data =  ((uint16_t) (*(inbuffer + offset)));
+    this->data |= ((uint16_t) (*(inbuffer + offset + 1))) << (8 * 1);
+    offset += sizeof(this->data);
+   return offset;
+  }
+
+  typedef uint16_t type;
+
 };
 
 

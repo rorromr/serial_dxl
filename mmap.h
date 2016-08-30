@@ -6,7 +6,8 @@
 #define MMAP_H
 //------------------------------------------------------------------------------
 #include <avr/eeprom.h>
-#include "types/base.h"
+#include "data_serialization.h"
+#include "variable.h"
 #include "Arduino.h"
 //------------------------------------------------------------------------------
 /** Memory map max size */
@@ -28,7 +29,7 @@ public:
     ramAddr(0U),
     eepromAddr(0U) {}
 
-  inline void set(VariablePtr variable, const uint8_t ramAddress = 0U, const uint8_t eepromAddress = 0U)
+  inline void set(VariableBasePtr variable, const uint8_t ramAddress = 0U, const uint8_t eepromAddress = 0U)
   {
     var = variable;
     ramAddr = ramAddress;
@@ -36,12 +37,13 @@ public:
   }
 
 public:
-  VariablePtr var;
+  VariableBasePtr var;
   uint8_t ramAddr;
   uint8_t eepromAddr;
 };
 /** MMapVar pointer typedef */
 typedef MMapVar* MMapVarPtr;
+
 //------------------------------------------------------------------------------
 /**
  * @class MMap
@@ -64,7 +66,7 @@ class MMap
       varList_ = new MMapVar[varN_];
     }
 
-    inline void registerVariable(VariablePtr var)
+    inline void registerVariable(VariableBasePtr var)
     {
       ramOffset_ += var->size();
       eepromOffset_ += var->storage_ == Storage::EEPROM ? var->size() : 0U;
@@ -160,6 +162,15 @@ class MMap
     inline uint8_t set(uint8_t index, uint8_t value)
     {
       return msgBuffer_[index] = value;
+    }
+
+    void printBuffer()
+    {
+      for(uint8_t i = 0; i < bufN_; ++i)
+      {
+        Serial.print(msgBuffer_[i], HEX); Serial.print('|');
+      }
+      Serial.println();
     }
 
 
