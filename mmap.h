@@ -8,6 +8,7 @@
 #include <avr/eeprom.h>
 #include "data_serialization.h"
 #include "variable.h"
+#include "logger.h"
 #include "Arduino.h"
 //------------------------------------------------------------------------------
 /** Memory map max size */
@@ -68,9 +69,9 @@ class MMap
 
     inline void registerVariable(VariableBasePtr var)
     {
+      varList_[varCount_++].set(var, ramOffset_, eepromOffset_);
       ramOffset_ += var->size();
       eepromOffset_ += var->storage_ == Storage::EEPROM ? var->size() : 0U;
-      varList_[varCount_++].set(var, ramOffset_, eepromOffset_);
     }
 
     void init()
@@ -128,13 +129,11 @@ class MMap
         {
 
           mvar.var->serialize(eepromBuffer_);
-          Serial.println(eepromBuffer_[0]);
           for (uint8_t j = 0; j < mvar.var->size(); ++j)
           {
             eeprom_write_byte ( (uint8_t*)(uint16_t) j + mvar.eepromAddr, eepromBuffer_[j]);
-            Serial.print("Writting "); Serial.print(eepromBuffer_[j]); Serial.print(" at "); Serial.println(j);
+            DEBUG_PRINT_RAW("Writting "); DEBUG_PRINT_RAW(eepromBuffer_[j]); DEBUG_PRINT_RAW(" at "); DEBUG_PRINTLN_RAW(j + mvar.eepromAddr);
           }
-            
         }
       }
     }

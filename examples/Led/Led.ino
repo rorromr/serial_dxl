@@ -27,7 +27,7 @@ class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
     {
       // Config pins
       pinMode(dir_pin_, OUTPUT);
-      pinMode(reset_pin_, OUTPUT);
+      pinMode(reset_pin_, INPUT);
       pinMode(led_pin_, OUTPUT);
     }
 
@@ -56,8 +56,8 @@ class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
 
     void update()
     {
-      DEBUG_PRINTLN("UPDATE");
-      DEBUG_PRINT("data: ");DEBUG_PRINTLN(command_.data);
+      //DEBUG_PRINTLN("UPDATE");
+      //DEBUG_PRINT("data: ");DEBUG_PRINTLN(command_.data);
       if (command_.data == 1) digitalWrite(led_pin_, HIGH);
       else digitalWrite(led_pin_, LOW);
     }
@@ -88,7 +88,7 @@ class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
 };
 
 
-LedDXL led(6, 7, 13);
+LedDXL led(4, 30, 13);
 SerialDXL<LedDXL> serialDxl;
 
 void setup() {
@@ -105,11 +105,13 @@ void setup() {
 
 void loop() {
   // Update msg buffer
-  while (Serial3.available())
+  while (Serial3.available()){
     serialDxl.process(Serial3.read());
+    Serial.println(Serial3.available());
+  }
+    
 
   led.mmap_.deserialize();
   led.update();
   led.mmap_.serialize();
-  delay(500);
 }
