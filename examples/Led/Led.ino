@@ -1,3 +1,4 @@
+#define LOGGER_MIN_SEVERITY LOGGER_SEVERITY_INFO
 #include <SerialDXL.h>
 
 // LED DXL basic config
@@ -18,17 +19,20 @@
 class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
 {
   public:
-    LedDXL(uint8_t dir_pin, uint8_t reset_pin, uint8_t led_pin):
+    LedDXL(uint8_t dataControlPin, uint8_t reset_pin, uint8_t led_pin):
     DeviceDXL(LED_MMAP_SIZE), // Call parent constructor
-    dir_pin_(dir_pin),        // Direction pin for RS485
     reset_pin_(reset_pin),    // Reset pin
     led_pin_(led_pin),        // LED pin
     command_(MMap::Access::RW, MMap::Storage::RAM) // Led command
     {
       // Config pins
-      pinMode(dir_pin_, OUTPUT);
+      pinMode(dataControlPin, OUTPUT);
       pinMode(reset_pin_, INPUT);
       pinMode(led_pin_, OUTPUT);
+
+      // Get mask and port for data control pin
+      dataControlPinMask_ = digitalPinToBitMask(dataControlPin);
+      dataControlPinReg_ = portOutputRegister(digitalPinToPort(dataControlPin));
     }
 
     void init()
@@ -70,16 +74,19 @@ class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
 
     inline void setTX()
     {
-      digitalWrite(dir_pin_,HIGH);
+      *dataControlPinReg_ |= dataControlPinMask_;
     }
 
     inline void setRX()
     {
-      digitalWrite(dir_pin_,LOW);
+      *dataControlPinReg_ &= ~dataControlPinMask_;
     }
 
   private:
-    const uint8_t dir_pin_; // Toggle communication direction pin
+    // Communication direction pin
+    uint8_t dataControlPinMask_;
+    volatile uint8_t *dataControlPinReg_;
+
     const uint8_t reset_pin_; // Reset pin
     const uint8_t led_pin_; // LED pin
     
@@ -88,30 +95,32 @@ class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
 };
 
 
-LedDXL led(4, 30, 13);
+LedDXL led(4, 30, A0);
 SerialDXL<LedDXL> serialDxl;
 
 void setup() {
   Serial.begin(115200);
   delay(50);
   
-  // Init serial communication using Dynamixel format
-  serialDxl.init(115200, &Serial3 ,&led);
-
   led.init();
   led.reset();
   led.mmap_.serialize();
+
+  // Init serial communication using Dynamixel format
+  serialDxl.init(&Serial1 ,&led);
+
+  pinMode(A1, OUTPUT);
+  
 }
 
 void loop() {
   // Update msg buffer
-  while (Serial3.available()){
-    serialDxl.process(Serial3.read());
-    Serial.println(Serial3.available());
+  while (Serial1.available()){
+    serialDxl.process(Serial1.read());
   }
-    
-
+  
   led.mmap_.deserialize();
   led.update();
   led.mmap_.serialize();
+  
 }

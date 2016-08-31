@@ -64,10 +64,10 @@ class DeviceDXL {
     MMap::Variable<UInt8, UInt8::type, 0, 255, 1> id_;
 
     // Baudrate
-    MMap::Variable<UInt8, UInt8::type, 0, 255, 10> baudrate_;
+    MMap::Variable<UInt8, UInt8::type, 0, 255, 1> baudrate_;
 
     // Return dalay time
-    MMap::Variable<UInt8, UInt8::type, 0, 255, 160> return_delay_;
+    MMap::Variable<UInt8, UInt8::type, 0, 255, 250> return_delay_;
 
     // Memory mapping
     MMap::MMap mmap_;
@@ -109,14 +109,15 @@ class SerialDXL
      * @param port Serial port (Stream class).
      * @param device Target device.
      */
-    void init(uint32_t baud, HardwareSerial *port, DeviceT *device)
+    void init(HardwareSerial *port, DeviceT *device)
     {
       // Set DeviceDXL
       device_ = device;
       // Set serial port
       port_ = port;
       // Set baudrate using Dynamixel relation
-      // TODO Set baudrate from device info
+      uint32_t baud = F_CPU/8/(device_->baudrate_.data+1);
+      INFO_PRINT("Baudrate at: "); INFO_PRINTLN(baud);
       port_->begin(baud);
     }
 
@@ -218,9 +219,8 @@ class SerialDXL
             txMsgBuf_[3] = 2; // Length
             txMsgBuf_[4] = 0; // Error
             txMsgBuf_[5] = ~(txMsgBuf_[2]+txMsgBuf_[3]);
-            // TODO Status return delay
-            _delay_us(160);
-            //_delay_us(device_->return_delay_.data);
+            // Status return delay
+            delayMicroseconds(2*device_->return_delay_.data);
             
             device_->setTX();
             // Send
@@ -242,9 +242,8 @@ class SerialDXL
             txMsgBuf_[5] = device_->mmap_.get(rxMsgBuf_[2]);
             
             txMsgBuf_[6] = ~(txMsgBuf_[2]+txMsgBuf_[3]+txMsgBuf_[4]+txMsgBuf_[5]);
-            // TODO Status return delay
-            _delay_us(160);
-            //_delay_us(device_->return_delay_.data);
+            // Status return delay
+            delayMicroseconds(2*device_->return_delay_.data);
 
             device_->setTX();
             // Send
@@ -267,9 +266,8 @@ class SerialDXL
 
             txMsgBuf_[4] = 0; // Error
             txMsgBuf_[5] = ~(txMsgBuf_[2]+txMsgBuf_[3]);
-            // TODO Status return delay
-            _delay_us(160);
-            //_delay_us(device_->return_delay_.data);
+            // Status return delay
+            delayMicroseconds(2*device_->return_delay_.data);
             
             device_->setTX();
             // Send
