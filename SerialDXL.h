@@ -129,9 +129,7 @@ class SerialDXL
      */
     void process(uint8_t data)
     {
-      #ifdef DEBUG_SERIAL_DXL
-      static uint16_t count = 0UL;
-      #endif
+      digitalWrite(A1, HIGH);
       // Check message
       uint32_t now = millis();
       if (now - last_call_ > 100)
@@ -195,8 +193,8 @@ class SerialDXL
           // Reset states
           msgState_ = 0;
           msgParamIdx_ = 2;
-          msgLen_ = 0;
           msgChecksum_ = 0;
+          msgLen_ = 0;
           break;
       }
 
@@ -204,15 +202,10 @@ class SerialDXL
       if (msgFinish_)
       {
         DEBUG_PRINTLN("MSG RECEIVED SUCCESS");
-        uint8_t i;
+        uint8_t i, data, checksum;
         switch(rxMsgBuf_[1])
         {
           case 1: // Ping
-            #ifdef DEBUG_SERIAL_DXL
-            DEBUG_PRINT("PING ");
-            ++count;
-            DEBUG_PRINTLN(count);
-            #endif
             txMsgBuf_[0] = 0xFF;
             txMsgBuf_[1] = 0xFF;
             txMsgBuf_[2] = device_->id_.data; //ID 
@@ -236,18 +229,26 @@ class SerialDXL
             txMsgBuf_[0] = 0xFF;
             txMsgBuf_[1] = 0xFF;
             txMsgBuf_[2] = device_->id_.data; //ID 
-            txMsgBuf_[3] = 3; // Length
-            txMsgBuf_[4] = 0; // Error
-            // TODO Add more than one value
-            txMsgBuf_[5] = device_->mmap_.get(rxMsgBuf_[2]);
-            
-            txMsgBuf_[6] = ~(txMsgBuf_[2]+txMsgBuf_[3]+txMsgBuf_[4]+txMsgBuf_[5]);
+            txMsgBuf_[3] = 2U+rxMsgBuf_[3]; // Length
+            txMsgBuf_[4] = 0U; // Error
+            // Reset checksum
+            checksum = 0U;
+            // Fill buffer
+            for (i = 0U; i < rxMsgBuf_[3]; ++i)
+            {
+              data = device_->mmap_.get(rxMsgBuf_[2]+i);
+              checksum += data;
+              txMsgBuf_[5+i] = data;
+            }
+            // Checksum
+            txMsgBuf_[5+i] = ~(txMsgBuf_[2]+txMsgBuf_[3]+txMsgBuf_[4]+checksum);
             // Status return delay
             delayMicroseconds(2*device_->return_delay_.data);
 
             device_->setTX();
             // Send
-            port_->write(txMsgBuf_, 7);
+            DEBUG_PRINTLN(6+i);
+            port_->write(txMsgBuf_, 6+i);
             port_->flush(); // Wait to complete
 
             device_->setRX();
@@ -260,11 +261,16 @@ class SerialDXL
             txMsgBuf_[1] = 0xFF;
             txMsgBuf_[2] = device_->id_.data; //ID 
             txMsgBuf_[3] = 2; // Length
-
-            // TODO Add more than one value
-            device_->mmap_.set(rxMsgBuf_[2],rxMsgBuf_[3]);
-
             txMsgBuf_[4] = 0; // Error
+
+            data = rxMsgBuf_[0] - 3U; // Number of params
+            for (i = 0U; i < data; ++i)
+            {
+              // Set values
+              device_->mmap_.set(rxMsgBuf_[2]+i,rxMsgBuf_[3+i]);
+            }
+            
+            // Calc checksum
             txMsgBuf_[5] = ~(txMsgBuf_[2]+txMsgBuf_[3]);
             // Status return delay
             delayMicroseconds(2*device_->return_delay_.data);
@@ -281,7 +287,7 @@ class SerialDXL
 
         }
       }
-      
+      digitalWrite(A1, LOW);
     }
 
   private:
