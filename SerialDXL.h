@@ -2,6 +2,9 @@
  * @file
  * @brief Dynamixel Device Library
  */
+#ifndef SERIALDXL_H
+#define SERIALDXL_H
+
 #define __STDC_LIMIT_MACROS
 #include "data_serialization.h"
 #include "variable.h"
@@ -10,8 +13,6 @@
 #include <avr/sleep.h>
 #include <Arduino.h>
 
-#ifndef SerialDXL_h
-#define SerialDXL_h
 //------------------------------------------------------------------------------
 /**
  * @class DeviceDXL
@@ -78,13 +79,8 @@ class DeviceDXL {
  * @brief Serial port wrapper for DXL communication protocol.
  */
 
+// Max message length, used for buffers
 #define SERIALDXL_MSG_LENGTH 64
-/** Cause error message for RX buffer bad Size.
- * @return Never returns since it is never called.
- */
-uint8_t badMsgBufLength(void)
-  __attribute__((error("Message buffer length too large or zero")));
-
 
 template <typename DeviceT>
 class SerialDXL
