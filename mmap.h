@@ -160,6 +160,13 @@ class MMap
 
     inline uint8_t set(uint8_t index, uint8_t value)
     {
+      for (uint8_t i = 0; i < varN_; ++i)
+      {
+        if (varList_[i].var->storage_ == Storage::EEPROM && varList_[i].ramAddr == index)
+        {
+          ;
+        }
+      }
       return msgBuffer_[index] = value;
     }
 
