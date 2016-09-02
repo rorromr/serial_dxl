@@ -67,7 +67,7 @@ class VariableBase
       storage_(storage) {};
 
     virtual uint8_t serialize(uint8_t *outbuffer) const = 0;
-    virtual uint8_t deserialize(uint8_t *inbuffer) = 0;
+    virtual uint8_t deserialize(uint8_t *inbuffer, bool overrride = false) = 0;
     virtual void setDefault();
     virtual uint8_t size() = 0;
   
@@ -93,10 +93,10 @@ class Variable : public VariableBase
       return C.serialize(outbuffer);
     }
     
-    uint8_t deserialize(uint8_t *inbuffer)
+    uint8_t deserialize(uint8_t *inbuffer, bool overrride = false)
     {
       // Check for read only
-      if (access_ == Access::R)
+      if (access_ == Access::R && !overrride)
         return sizeof(C.data);
       uint8_t size = C.deserialize(inbuffer);
       saturation<T, min, max>(C.data);

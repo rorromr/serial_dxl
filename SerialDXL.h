@@ -50,7 +50,7 @@ class DeviceDXL {
     {
       if (onReset())
       {
-        DEBUG_PRINTLN("DEVICE RESET");
+        INFO_PRINTLN("DEVICE RESET");
         mmap_.reset(); // Set default values and save EEPROM
       }
     }

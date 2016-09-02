@@ -4,7 +4,7 @@
 // LED DXL basic config
 #define LED_MODEL 100
 #define LED_FIRMWARE 100
-#define LED_MMAP_SIZE 1
+#define LED_MMAP_SIZE 2 // Use 2 variables
 
 /**
  * @brief LED control using DXL communication protocol
@@ -23,7 +23,8 @@ class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
     DeviceDXL(LED_MMAP_SIZE), // Call parent constructor
     reset_pin_(reset_pin),    // Reset pin
     led_pin_(led_pin),        // LED pin
-    command_(MMap::Access::RW, MMap::Storage::RAM) // Led command
+    command_(MMap::Access::RW, MMap::Storage::RAM), // Led command
+    test_(MMap::Access::RW, MMap::Storage::EEPROM)
     {
       // Config pins
       pinMode(dataControlPin, OUTPUT);
@@ -43,6 +44,7 @@ class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
        */
       DeviceDXL::init();
       mmap_.registerVariable(&command_);
+      mmap_.registerVariable(&test_);
       mmap_.init();
       
       /*
@@ -51,6 +53,7 @@ class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
       DEBUG_PRINTLN("Load default");
       mmap_.load(); // Load values from EEPROM
       DEBUG_PRINT("data: ");DEBUG_PRINTLN(command_.data);
+      INFO_PRINT("id: ");INFO_PRINTLN_RAW(id_.data);
       
       /*
        * Read sensor data
@@ -68,7 +71,7 @@ class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
 
     inline bool onReset()
     {
-      DEBUG_PRINTLN("ON RESET");
+      INFO_PRINTLN("ON RESET");
       return digitalRead(reset_pin_) == HIGH ? true : false;
     }
 
@@ -91,7 +94,8 @@ class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
     const uint8_t led_pin_; // LED pin
     
     // LED variable
-    MMap::Variable<UInt8, UInt8::type, 0, 1, 0> command_;
+    MMap::Variable<UInt8, UInt8::type, 0, 1, 1> command_;
+    MMap::Variable<UInt8, UInt8::type, 0, 255, 0> test_;
 };
 
 

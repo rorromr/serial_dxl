@@ -28,7 +28,8 @@ public:
   MMapVar():
     var(NULL),
     ramAddr(0U),
-    eepromAddr(0U) {}
+    eepromAddr(0U),
+    saveFlag(false) {}
 
   inline void set(VariableBasePtr variable, const uint8_t ramAddress = 0U, const uint8_t eepromAddress = 0U)
   {
@@ -41,6 +42,7 @@ public:
   VariableBasePtr var;
   uint8_t ramAddr;
   uint8_t eepromAddr;
+  bool saveFlag;
 };
 /** MMapVar pointer typedef */
 typedef MMapVar* MMapVarPtr;
@@ -69,7 +71,7 @@ class MMap
 
     inline void registerVariable(VariableBasePtr var)
     {
-      varList_[varCount_++].set(var, ramOffset_, eepromOffset_);
+      varList_[varCount_++].set(var, ramOffset_, var->storage_ == Storage::EEPROM ? eepromOffset_ : 0U);
       ramOffset_ += var->size();
       eepromOffset_ += var->storage_ == Storage::EEPROM ? var->size() : 0U;
     }
@@ -95,7 +97,19 @@ class MMap
       uint8_t *buffer = msgBuffer_;
       for (uint8_t i = 0; i < varN_; ++i)
       {
-        buffer += varList_[i].var->deserialize(buffer);
+        MMapVar& mvar = varList_[i];
+        buffer += mvar.var->deserialize(buffer);
+        // Save data on EEPROM
+        if (mvar.saveFlag)
+        {
+          mvar.var->serialize(eepromBuffer_);
+          for (uint8_t j = 0; j < mvar.var->size(); ++j)
+          {
+            eeprom_write_byte ( (uint8_t*)(uint16_t) j + mvar.eepromAddr, eepromBuffer_[j]);
+            DEBUG_PRINT_RAW("Writting "); DEBUG_PRINT_RAW(eepromBuffer_[j]); DEBUG_PRINT_RAW(" at "); DEBUG_PRINTLN_RAW(j + mvar.eepromAddr);
+          }
+          mvar.saveFlag = false;
+        }
       }
       return buffer - msgBuffer_;
     }
@@ -113,8 +127,11 @@ class MMap
         else
         {
           for (uint8_t j = 0; j < mvar.var->size(); ++j)
-            eepromBuffer_[j] = eeprom_read_byte( (uint8_t*)(uint16_t) mvar.eepromAddr);
-          mvar.var->deserialize(eepromBuffer_);
+          {
+            eepromBuffer_[j] = eeprom_read_byte( (uint8_t*)(uint16_t) j + mvar.eepromAddr);
+            INFO_PRINT_RAW("Reading "); INFO_PRINT_RAW(eepromBuffer_[j]); INFO_PRINT_RAW(" at "); INFO_PRINTLN_RAW(j + mvar.eepromAddr);
+          }
+          mvar.var->deserialize(eepromBuffer_, true); // Call with override access
         } 
       }
     }
@@ -160,13 +177,15 @@ class MMap
 
     inline uint8_t set(uint8_t index, uint8_t value)
     {
-      for (uint8_t i = 0; i < varN_; ++i)
+      
+      for (uint8_t i = 0; i <= varCount_; ++i)
       {
         if (varList_[i].var->storage_ == Storage::EEPROM && varList_[i].ramAddr == index)
         {
-          ;
+          varList_[i].saveFlag = true;
         }
       }
+
       return msgBuffer_[index] = value;
     }
 
