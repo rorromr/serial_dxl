@@ -3,6 +3,8 @@
 import sys
 import time
 from dynamixel_driver.dynamixel_io import DynamixelIO
+import struct
+_struct = struct.Struct('<l')
 
 def test_ping(dxl, dev_id):
     result = None
@@ -64,12 +66,27 @@ def test_ping(dxl):
     for i in range(5):
         print dxl.ping(1)
 
-            
-def main():
-    dxl = DynamixelIO('/dev/ttyUSB1', baudrate = 1000000)
-    #test_ping(dxl)
-    test_blink(dxl)
+def serialize_int32(data):
+    return  [ord(a) for a in list(struct.pack('<l',int(data)))]
 
+          
+def main():
+    dxl = DynamixelIO('/dev/ttyUSB0', baudrate = 1000000)
+    print dxl.ping(1)
+    #test_ping(dxl)
+    #test_blink(dxl)
+    target = -900.63
+    data = serialize_int32(target*1000)
+    print (data[0])+(data[1]<<8)+(data[2]<<16)+(data[3]<<24)
+    print data
+    print dxl.write(1,7,data)
+
+
+   
+
+    # print [b1,b2,b3,b4]
+
+    # print (b1)+(b2<<8)+(b3<<16)+(b4<<24)
         #time.sleep(0.5)
 
     #change_id(dxl, 5, 1)

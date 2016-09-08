@@ -4,7 +4,7 @@
 // LED DXL basic config
 #define LED_MODEL 100
 #define LED_FIRMWARE 100
-#define LED_MMAP_SIZE 2 // Use 2 variables
+#define LED_MMAP_SIZE 3 // Use 3 variables
 
 /**
  * @brief LED control using DXL communication protocol
@@ -24,7 +24,8 @@ class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
     reset_pin_(reset_pin),    // Reset pin
     led_pin_(led_pin),        // LED pin
     command_(MMap::Access::RW, MMap::Storage::RAM), // Led command
-    test_(MMap::Access::RW, MMap::Storage::EEPROM)
+    test_(MMap::Access::RW, MMap::Storage::EEPROM),
+    float_(MMap::Access::RW, MMap::Storage::RAM)
     {
       // Config pins
       pinMode(dataControlPin, OUTPUT);
@@ -44,6 +45,7 @@ class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
        */
       DeviceDXL::init();
       mmap_.registerVariable(&command_);
+      mmap_.registerVariable(&float_);
       mmap_.registerVariable(&test_);
       mmap_.init();
       
@@ -67,6 +69,14 @@ class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
       //DEBUG_PRINT("data: ");DEBUG_PRINTLN(command_.data);
       if (command_.data == 1) digitalWrite(led_pin_, HIGH);
       else digitalWrite(led_pin_, LOW);
+
+      static uint32_t last_call = 0UL;
+      if(millis()-last_call>1000)
+      {
+        MMap::getFloat(float_.data, float_raw);
+        Serial.println(float_raw,5);
+        last_call = millis();
+      }
     }
 
     inline bool onReset()
@@ -92,10 +102,13 @@ class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
 
     const uint8_t reset_pin_; // Reset pin
     const uint8_t led_pin_; // LED pin
+    float float_raw;
     
     // LED variable
     MMap::Variable<UInt8, UInt8::type, 0, 1, 1> command_;
     MMap::Variable<UInt8, UInt8::type, 0, 255, 0> test_;
+
+    MMap::Variable<Int32, Int32::type, -1000000, 1000000, 0> float_;
 };
 
 
