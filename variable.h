@@ -6,6 +6,8 @@
 
 #include <stdint.h>
 
+#define FLOAT_MAPPING 0.001f
+
 namespace MMap
 {
 
@@ -117,6 +119,14 @@ class Variable : public VariableBase
     MessageT C;
     T& data;
 };
+
+
+
+inline void getFloat(int32_t &data, float &float_data)
+{
+  float_data = FLOAT_MAPPING * data;
+}
+
 
 }
 
