@@ -145,18 +145,18 @@ class UInt16 : public Message
 
   virtual uint8_t serialize(uint8_t *outbuffer) const
   {
-    uint8_t offset = 0;
-    *(outbuffer + offset + 0) = (this->data >> (8 * 0)) & 0xFF;
-    *(outbuffer + offset + 1) = (this->data >> (8 * 1)) & 0xFF;
+    uint8_t offset = 0U;
+    *(outbuffer + offset + 0U) = (this->data >> (8U * 0U)) & 0xFF;
+    *(outbuffer + offset + 1U) = (this->data >> (8U * 1U)) & 0xFF;
     offset += sizeof(this->data);
     return offset;
   }
 
-  virtual uint8_t deserialize(unsigned char *inbuffer)
+  virtual uint8_t deserialize(uint8_t *inbuffer)
   {
     uint8_t offset = 0;
     this->data =  ((uint16_t) (*(inbuffer + offset)));
-    this->data |= ((uint16_t) (*(inbuffer + offset + 1))) << (8 * 1);
+    this->data |= ((uint16_t) (*(inbuffer + offset + 1U))) << (8U * 1U);
     offset += sizeof(this->data);
    return offset;
   }
@@ -164,6 +164,58 @@ class UInt16 : public Message
   typedef uint16_t type;
 
 };
+
+//---------------------------------------------------------------------------
+/**
+ * Int32
+ */
+class Int32 : public Message
+{
+  public:
+    int32_t data;
+
+  Int32():
+    data(0UL)
+  {
+  }
+
+  virtual uint8_t serialize(uint8_t *outbuffer) const
+  {
+    uint8_t offset = 0U;
+    union {
+      int32_t real;
+      uint32_t base;
+    } u_data;
+    u_data.real = this->data;
+    *(outbuffer + offset + 0U) = (u_data.base >> (8U * 0U)) & 0xFF;
+    *(outbuffer + offset + 1U) = (u_data.base >> (8U * 1U)) & 0xFF;
+    *(outbuffer + offset + 2U) = (u_data.base >> (8U * 2U)) & 0xFF;
+    *(outbuffer + offset + 3U) = (u_data.base >> (8U * 3U)) & 0xFF;
+    offset += sizeof(this->data);
+    return offset;
+  }
+
+  virtual uint8_t deserialize(uint8_t *inbuffer)
+  {
+    uint8_t offset = 0U;
+    union {
+      int32_t real;
+      uint32_t base;
+    } u_data;
+    u_data.base = 0U;
+    u_data.base |= ((uint32_t) (*(inbuffer + offset + 0U))) << (8U * 0U);
+    u_data.base |= ((uint32_t) (*(inbuffer + offset + 1U))) << (8U * 1U);
+    u_data.base |= ((uint32_t) (*(inbuffer + offset + 2U))) << (8U * 2U);
+    u_data.base |= ((uint32_t) (*(inbuffer + offset + 3U))) << (8U * 3U);
+    this->data = u_data.real;
+    offset += sizeof(this->data);
+    return offset;
+  }
+
+  typedef int32_t type;
+
+};
+
 
 
 #endif
