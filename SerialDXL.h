@@ -37,6 +37,8 @@ class DeviceDXL {
 
     virtual inline void setRX() = 0;
 
+    virtual inline void update() = 0;
+
     void init()
     {
       mmap_.registerVariable(&model_);
