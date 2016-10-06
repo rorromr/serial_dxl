@@ -52,21 +52,20 @@ typedef MMapVar* MMapVarPtr;
  * @class MMap
  * @brief Memory mapping.
  */
+template<size_t mmap_size>
 class MMap
 {
   public:
-    MMap(uint8_t size, uint8_t eepromOffset = 0U):
+    MMap(uint8_t eepromOffset = 0U):
       msgBuffer_(NULL),
       bufN_(0U),
-      varList_(NULL),
-      varN_(size),
+      varN_(mmap_size),
       varCount_(0U),
       eepromOffset_(0U),
       ramOffset_(0U)
     {
       // Check size
       if (varN_ > MMAP_MAX_SIZE) badMMapLength();
-      varList_ = new MMapVar[varN_];
     }
 
     inline void registerVariable(VariableBasePtr var)
@@ -206,7 +205,7 @@ class MMap
     // Message buffer length
     uint8_t bufN_;
     // Variable list
-    MMapVarPtr varList_;
+    MMapVar varList_[mmap_size];
     // Variable length
     uint8_t varN_;
     uint8_t varCount_;

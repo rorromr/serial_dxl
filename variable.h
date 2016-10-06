@@ -4,7 +4,7 @@
 #ifndef BASE_H
 #define BASE_H
 
-#include <stdint.h>
+#include "data_serialization.h"
 
 
 namespace MMap
@@ -121,10 +121,10 @@ struct Integer
     typedef Variable<T, ConstInt<typename T::type, min>, ConstInt<typename T::type, max>, ConstInt<typename T::type, def> > type;
 };
 
-template <typename T, typename min, typename max, typename def>
+template <typename min, typename max, typename def>
 struct Float
 {
-    typedef Variable<T, min, max, def> type;
+    typedef Variable<Float32, min, max, def> type;
 };
 
 

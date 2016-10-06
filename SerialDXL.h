@@ -17,16 +17,16 @@
  * @class DeviceDXL
  * @brief Base class for device with Dynamixel protocol.
  */
-template <uint16_t modelT, uint8_t firmwareT>
+template <uint16_t modelT, uint8_t firmwareT, size_t mmap_size>
 class DeviceDXL {
   public:
-    DeviceDXL(uint8_t N):
+    DeviceDXL():
       model_(MMap::Access::R, MMap::Storage::EEPROM),
       firmware_(MMap::Access::R, MMap::Storage::EEPROM),
       id_(MMap::Access::RW, MMap::Storage::EEPROM),
       baudrate_(MMap::Access::RW, MMap::Storage::EEPROM),
       return_delay_(MMap::Access::RW, MMap::Storage::EEPROM),
-      mmap_(5U+N)
+      mmap_()
     {
     }
 
@@ -72,7 +72,7 @@ class DeviceDXL {
     MMap::Variable<UInt8, ConstInt<UInt8::type, 0U>, ConstInt<UInt8::type, 255U>, ConstInt<UInt8::type, 250U> > return_delay_;
 
     // Memory mapping
-    MMap::MMap mmap_;
+    MMap::MMap<5+mmap_size> mmap_;
 };
 //------------------------------------------------------------------------------
 /**

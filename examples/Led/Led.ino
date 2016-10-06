@@ -4,7 +4,7 @@
 // LED DXL basic config
 #define LED_MODEL 100
 #define LED_FIRMWARE 100
-#define LED_MMAP_SIZE 1 // Use 3 variables
+#define LED_MMAP_SIZE 1 // Use 1 variable
 
 /**
  * @brief LED control using DXL communication protocol
@@ -16,11 +16,11 @@
  * @param reset_pin Pin for reset device
  * @param led_pin LED pin.
  */
-class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
+class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE, LED_MMAP_SIZE>
 {
   public:
     LedDXL(uint8_t dataControlPin, uint8_t reset_pin, uint8_t led_pin):
-    DeviceDXL(LED_MMAP_SIZE), // Call parent constructor
+    DeviceDXL(), // Call parent constructor
     reset_pin_(reset_pin),    // Reset pin
     led_pin_(led_pin),        // LED pin
     command_(MMap::Access::RW, MMap::Storage::RAM) // Led command
