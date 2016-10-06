@@ -4,7 +4,7 @@
 // LED DXL basic config
 #define LED_MODEL 100
 #define LED_FIRMWARE 100
-#define LED_MMAP_SIZE 3 // Use 3 variables
+#define LED_MMAP_SIZE 1 // Use 3 variables
 
 /**
  * @brief LED control using DXL communication protocol
@@ -23,9 +23,7 @@ class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
     DeviceDXL(LED_MMAP_SIZE), // Call parent constructor
     reset_pin_(reset_pin),    // Reset pin
     led_pin_(led_pin),        // LED pin
-    command_(MMap::Access::RW, MMap::Storage::RAM), // Led command
-    test_(MMap::Access::RW, MMap::Storage::EEPROM),
-    float_(MMap::Access::RW, MMap::Storage::RAM)
+    command_(MMap::Access::RW, MMap::Storage::RAM) // Led command
     {
       // Config pins
       pinMode(dataControlPin, OUTPUT);
@@ -45,8 +43,6 @@ class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
        */
       DeviceDXL::init();
       mmap_.registerVariable(&command_);
-      mmap_.registerVariable(&float_);
-      mmap_.registerVariable(&test_);
       mmap_.init();
       
       /*
@@ -65,23 +61,12 @@ class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
 
     void update()
     {
-      //DEBUG_PRINTLN("UPDATE");
-      //DEBUG_PRINT("data: ");DEBUG_PRINTLN(command_.data);
       if (command_.data == 1) digitalWrite(led_pin_, HIGH);
       else digitalWrite(led_pin_, LOW);
-
-      static uint32_t last_call = 0UL;
-      if(millis()-last_call>1000)
-      {
-        MMap::getFloat(float_.data, float_raw);
-        Serial.println(float_raw,5);
-        last_call = millis();
-      }
     }
 
     inline bool onReset()
     {
-      INFO_PRINTLN("ON RESET");
       return digitalRead(reset_pin_) == HIGH ? true : false;
     }
 
@@ -105,10 +90,7 @@ class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
     float float_raw;
     
     // LED variable
-    MMap::Variable<UInt8, UInt8::type, 0, 1, 1> command_;
-    MMap::Variable<UInt8, UInt8::type, 0, 255, 0> test_;
-
-    MMap::Variable<Int32, Int32::type, -1000000, 1000000, 0> float_;
+    MMap::Integer<UInt8, 0, 1, 1>::type command_;
 };
 
 
