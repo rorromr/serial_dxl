@@ -127,7 +127,7 @@ class SerialDXL
      */
     void process(uint8_t data)
     {
-      digitalWrite(A1, HIGH);
+      DEBUG_PRINTLN(data);
       // Check message
       uint32_t now = millis();
       if (now - last_call_ > 100)
@@ -212,12 +212,10 @@ class SerialDXL
             txMsgBuf_[5] = ~(txMsgBuf_[2]+txMsgBuf_[3]);
             // Status return delay
             delayMicroseconds(2*device_->return_delay_.data);
-            
             device_->setTX();
             // Send
             port_->write(txMsgBuf_,6);
             port_->flush(); // Wait to complete
-
             device_->setRX();
             msgFinish_ = 0;
             break;
@@ -285,7 +283,6 @@ class SerialDXL
 
         }
       }
-      digitalWrite(A1, LOW);
     }
 
   private:
