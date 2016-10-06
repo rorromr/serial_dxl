@@ -16,11 +16,11 @@
  * @param reset_pin Pin for reset device
  * @param led_pin LED pin.
  */
-class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
+class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE, LED_MMAP_SIZE>
 {
   public:
     LedDXL(uint8_t dataControlPin, uint8_t reset_pin, uint8_t led_pin):
-    DeviceDXL(LED_MMAP_SIZE), // Call parent constructor
+    DeviceDXL(), // Call parent constructor
     reset_pin_(reset_pin),    // Reset pin
     led_pin_(led_pin),        // LED pin
     command_(MMap::Access::RW, MMap::Storage::RAM) // Led command
@@ -61,15 +61,12 @@ class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
 
     void update()
     {
-      //DEBUG_PRINTLN("UPDATE");
-      //DEBUG_PRINT("data: ");DEBUG_PRINTLN(command_.data);
       if (command_.data == 1) digitalWrite(led_pin_, HIGH);
       else digitalWrite(led_pin_, LOW);
     }
 
     inline bool onReset()
     {
-      INFO_PRINTLN("ON RESET");
       return digitalRead(reset_pin_) == HIGH ? true : false;
     }
 
@@ -93,7 +90,7 @@ class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE>
     float float_raw;
     
     // LED variable
-    MMap::Variable<UInt8, UInt8::type, 0, 1, 0> command_;
+    MMap::Integer<UInt8, 0, 1, 1>::type command_;
 };
 
 

@@ -5,7 +5,6 @@
 #ifndef SERIALDXL_H
 #define SERIALDXL_H
 
-#define __STDC_LIMIT_MACROS
 #include "data_serialization.h"
 #include "variable.h"
 #include "mmap.h"
@@ -18,16 +17,16 @@
  * @class DeviceDXL
  * @brief Base class for device with Dynamixel protocol.
  */
-template <uint16_t modelT, uint8_t firmwareT>
+template <uint16_t modelT, uint8_t firmwareT, size_t mmap_size>
 class DeviceDXL {
   public:
-    DeviceDXL(uint8_t N):
+    DeviceDXL():
       model_(MMap::Access::R, MMap::Storage::EEPROM),
       firmware_(MMap::Access::R, MMap::Storage::EEPROM),
       id_(MMap::Access::RW, MMap::Storage::EEPROM),
       baudrate_(MMap::Access::RW, MMap::Storage::EEPROM),
       return_delay_(MMap::Access::RW, MMap::Storage::EEPROM),
-      mmap_(5U+N)
+      mmap_()
     {
     }
 
@@ -58,22 +57,22 @@ class DeviceDXL {
     }
 
     // Model
-    MMap::Variable<UInt16, UInt16::type, 0, 255, modelT> model_;
+    MMap::Variable<UInt16, ConstInt<UInt16::type, 0U>, ConstInt<UInt16::type, 255U>, ConstInt<UInt16::type, modelT> > model_;
 
     // Firmware version
-    MMap::Variable<UInt8, UInt8::type, 0, 255, firmwareT> firmware_;
+    MMap::Variable<UInt8, ConstInt<UInt8::type, 0U>, ConstInt<UInt8::type, 255U>, ConstInt<UInt8::type, firmwareT> > firmware_;
 
     // ID
-    MMap::Variable<UInt8, UInt8::type, 0, 255, 1> id_;
+    MMap::Variable<UInt8, ConstInt<UInt8::type, 0U>, ConstInt<UInt8::type, 255U>, ConstInt<UInt8::type, 1U> > id_;
 
     // Baudrate
-    MMap::Variable<UInt8, UInt8::type, 0, 255, 1> baudrate_;
+    MMap::Variable<UInt8, ConstInt<UInt8::type, 0U>, ConstInt<UInt8::type, 255U>, ConstInt<UInt8::type, 1U> > baudrate_;
 
     // Return dalay time
-    MMap::Variable<UInt8, UInt8::type, 0, 255, 250> return_delay_;
+    MMap::Variable<UInt8, ConstInt<UInt8::type, 0U>, ConstInt<UInt8::type, 255U>, ConstInt<UInt8::type, 250U> > return_delay_;
 
     // Memory mapping
-    MMap::MMap mmap_;
+    MMap::MMap<5+mmap_size> mmap_;
 };
 //------------------------------------------------------------------------------
 /**
