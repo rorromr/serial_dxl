@@ -73,20 +73,18 @@ def serialize_int32(data):
 
           
 def main():
-    dxl = DynamixelIO('/dev/ttyUSB0', baudrate = 200000)
+    dxl = DynamixelIO('/dev/ttyUSB2', baudrate = 200000)
 
-    for i in range(100):
-        try:
-            dxl.get_feedback(21)
-        except:
-            print 'error'
-    test_blink(dxl)
-    for i in range(100):
-        try:
-            dxl.get_feedback(21)
-        except:
-            print 'error'
-    test_blink(dxl)
+    # print dxl.write(1,3,[35])
+    # time.sleep(0.1)
+    print dxl.ping(35)
+    # test_blink(dxl)
+    # for i in range(100):
+    #     try:
+    #         dxl.get_feedback(21)
+    #     except:
+    #         print 'error'
+    # test_blink(dxl)
 
     #test_write(dxl, 1, 4, 9)
 
