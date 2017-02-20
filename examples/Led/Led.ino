@@ -1,4 +1,4 @@
-#define LOGGER_MIN_SEVERITY LOGGER_SEVERITY_INFO
+#define LOGGER_MIN_SEVERITY LOGGER_SEVERITY_NONE
 #include <SerialDXL.h>
 
 // LED DXL basic config
@@ -94,12 +94,12 @@ class LedDXL: public DeviceDXL<LED_MODEL, LED_FIRMWARE, LED_MMAP_SIZE>
 };
 
 
-LedDXL led(4, A1, A0);
+LedDXL led(4, 8, 13);
 SerialDXL<LedDXL> serialDxl;
 
 void setup() {
   Serial.begin(115200);
-  delay(50);
+  DEBUG_PRINTLN("INIT SETUP");
   
   led.init();
   led.reset();
@@ -107,9 +107,6 @@ void setup() {
 
   // Init serial communication using Dynamixel format
   serialDxl.init(&Serial1 ,&led);
-
-  pinMode(A1, OUTPUT);
-  
 }
 
 void loop() {

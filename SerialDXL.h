@@ -128,7 +128,7 @@ class SerialDXL
     {
       DEBUG_PRINTLN(data);
       // Check message
-      uint32_t now = millis();
+/*      uint32_t now = micros();
       if (now - last_call_ > 100)
       {
         // Reset states
@@ -139,7 +139,7 @@ class SerialDXL
         msgChecksum_ = 0;
         msgFinish_ = 0;
       }
-      last_call_ = now;
+      last_call_ = now;*/
 
       switch(msgState_)
       {
@@ -148,7 +148,7 @@ class SerialDXL
           break;
           
         case 1: // 0XFF
-          msgState_ = data == 0xFF ? 2 : 1;
+          msgState_ = data == 0xFF ? 2 : 0;
           break;
           
         case 2: // ID
@@ -203,6 +203,7 @@ class SerialDXL
         switch(rxMsgBuf_[1])
         {
           case 1: // Ping
+            DEBUG_PRINTLN("PING");
             txMsgBuf_[0] = 0xFF;
             txMsgBuf_[1] = 0xFF;
             txMsgBuf_[2] = device_->id_.data; //ID 
@@ -221,6 +222,7 @@ class SerialDXL
 
           case 2: // Read data
             DEBUG_PRINTLN("READ DATA");
+            DEBUG_PRINTLN(device_->mmap_.getSize());
             txMsgBuf_[0] = 0xFF;
             txMsgBuf_[1] = 0xFF;
             txMsgBuf_[2] = device_->id_.data; //ID 
@@ -231,6 +233,14 @@ class SerialDXL
             // Fill buffer
             for (i = 0U; i < rxMsgBuf_[3]; ++i)
             {
+              uint8_t address = rxMsgBuf_[2]+i;
+              if (address >= device_->mmap_.getSize())
+              {
+
+                txMsgBuf_[4] = 1U<<3U; // Range error
+                txMsgBuf_[5+i] = 0U;   // Fill with null data
+                continue;
+              }
               data = device_->mmap_.get(rxMsgBuf_[2]+i);
               checksum += data;
               txMsgBuf_[5+i] = data;

@@ -43,11 +43,13 @@ def test_write(dxl, dev_id, address, data):
 def test_blink(dxl):
     for i in range(10):
         print dxl.write(1, 6, [0])
-        print dxl.read(1, 0,8)[5:-2]
+        print dxl.read(1, 0, 7)
         time.sleep(0.05)
-        dxl.write(1, 6, [1])
-        print dxl.read(1, 0, 8)[5:-2]
+        print ''
+        print dxl.write(1, 6, [1])
+        print dxl.read(1, 0, 7)
         time.sleep(0.05)
+        print ''
 
 def test_change_id(dxl):
     for i in range(5):
@@ -71,15 +73,30 @@ def serialize_int32(data):
 
           
 def main():
-    dxl = DynamixelIO('/dev/ttyUSB0', baudrate = 1000000)
-    print dxl.ping(1)
+    dxl = DynamixelIO('/dev/ttyUSB0', baudrate = 200000)
+
+    for i in range(100):
+        try:
+            dxl.get_feedback(21)
+        except:
+            print 'error'
+    test_blink(dxl)
+    for i in range(100):
+        try:
+            dxl.get_feedback(21)
+        except:
+            print 'error'
+    test_blink(dxl)
+
+    #test_write(dxl, 1, 4, 9)
+
     #test_ping(dxl)
     #test_blink(dxl)
-    target = -900.63
-    data = serialize_int32(target*1000)
-    print (data[0])+(data[1]<<8)+(data[2]<<16)+(data[3]<<24)
-    print data
-    print dxl.write(1,7,data)
+    # target = -900.63
+    # data = serialize_int32(target*1000)
+    # print (data[0])+(data[1]<<8)+(data[2]<<16)+(data[3]<<24)
+    # print data
+    # print dxl.write(1,7,data)
 
 
    

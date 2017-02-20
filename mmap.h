@@ -197,6 +197,11 @@ class MMap
       Serial.println();
     }
 
+    inline uint8_t getSize()
+    {
+      return bufN_;
+    }
+
 
   public:
     // Message buffer
