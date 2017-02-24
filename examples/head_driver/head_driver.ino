@@ -1,5 +1,5 @@
-// #define LOGGER_MIN_SEVERITY LOGGER_SEVERITY_NONE
-#define LOGGER_MIN_SEVERITY LOGGER_SEVERITY_DEBUG
+#define LOGGER_MIN_SEVERITY LOGGER_SEVERITY_NONE
+// #define LOGGER_MIN_SEVERITY LOGGER_SEVERITY_DEBUG
 // https://github.com/rorromr/serial_dxl/archive/v0.1.tar.gz
 #include <SerialDXL.h>
 #include <Servo.h>
@@ -19,8 +19,8 @@
  * This variables are inside DeviceDXL class
  */ 
 
-// We add 5 UInt8 (13 bytes)
-#define SERVO_MMAP_SIZE 13
+// We add 13 UInt8 (13 bytes)
+#define SERVO_MMAP_SIZE 11
 
 // MMap position for commands (mem Addrs)
 
@@ -32,11 +32,9 @@
 #define SERVO5_POS      11
 #define SERVO_CMD       12
 #define LED_SELECT      13
-#define LED_COLOR_R     14
-#define LED_COLOR_G     15
-#define LED_COLOR_B     16
-#define LED_BRIGHTNESS  17
-#define LED_CMD         18
+#define LED_COLOR_      14
+#define LED_BRIGHTNESS  15
+#define LED_CMD         16
 
 //Servos commands (not addr)
 #define SERVO1_SWAP 20
@@ -46,6 +44,7 @@
 #define SHOW_R1 1
 #define SHOW_R2 2
 #define UPDATE_C 3
+#define CHANGE_BRIGHT 4
 #define LEDS_INACTIVE 21
 
 // Number of servos in the array
@@ -85,19 +84,17 @@ class HeadDXL: public DeviceDXL<SERVO_MODEL, SERVO_FIRMWARE, SERVO_MMAP_SIZE>
     dir_pin_(dir_pin),    // Direction pin for RS485
     reset_pin_(reset_pin), // Reset pin
     numServos_(numServos), // numero de servos
-    servo0_pos_command_(MMap::Access::RW, MMap::Storage::RAM),
-    servo1_pos_command_(MMap::Access::RW, MMap::Storage::RAM),
-    servo2_pos_command_(MMap::Access::RW, MMap::Storage::RAM),
-    servo3_pos_command_(MMap::Access::RW, MMap::Storage::RAM),
-    servo4_pos_command_(MMap::Access::RW, MMap::Storage::RAM),
-    servo5_pos_command_(MMap::Access::RW, MMap::Storage::RAM),
+    servo0_pos_(MMap::Access::RW, MMap::Storage::RAM),
+    servo1_pos_(MMap::Access::RW, MMap::Storage::RAM),
+    servo2_pos_(MMap::Access::RW, MMap::Storage::RAM),
+    servo3_pos_(MMap::Access::RW, MMap::Storage::RAM),
+    servo4_pos_(MMap::Access::RW, MMap::Storage::RAM),
+    servo5_pos_(MMap::Access::RW, MMap::Storage::RAM),
     servo_cmd_(MMap::Access::RW, MMap::Storage::RAM),
-    led_select_command_(MMap::Access::RW, MMap::Storage::RAM)/*,  // select LED command
-    led_color_command_r_(MMap::Access::RW, MMap::Storage::RAM), // R channel LEDs colors
-    led_color_command_g_(MMap::Access::RW, MMap::Storage::RAM), // G channel LEDs colors
-    led_color_command_b_(MMap::Access::RW, MMap::Storage::RAM), // B channel LEDs colors
+    led_select_(MMap::Access::RW, MMap::Storage::RAM),  // select LED command
+    led_color_(MMap::Access::RW, MMap::Storage::RAM), // 8 bit encode color, RRRGGGBB
     led_brightness_(MMap::Access::RW, MMap::Storage::RAM),
-    led_cmd_(MMap::Access::RW, MMap::Storage::RAM)*/
+    led_cmd_(MMap::Access::RW, MMap::Storage::RAM)
     {
       // Config pins
       pinMode(dir_pin_, OUTPUT);
@@ -116,31 +113,24 @@ class HeadDXL: public DeviceDXL<SERVO_MODEL, SERVO_FIRMWARE, SERVO_MMAP_SIZE>
         */
         DeviceDXL::init();
 
-        mmap_.registerVariable(&servo0_pos_command_);
-        mmap_.registerVariable(&servo1_pos_command_);
-        mmap_.registerVariable(&servo2_pos_command_);
-        mmap_.registerVariable(&servo3_pos_command_);
-        mmap_.registerVariable(&servo4_pos_command_);
-        mmap_.registerVariable(&servo5_pos_command_);
+        mmap_.registerVariable(&servo0_pos_);
+        mmap_.registerVariable(&servo1_pos_);
+        mmap_.registerVariable(&servo2_pos_);
+        mmap_.registerVariable(&servo3_pos_);
+        mmap_.registerVariable(&servo4_pos_);
+        mmap_.registerVariable(&servo5_pos_);
         mmap_.registerVariable(&servo_cmd_);
-        mmap_.registerVariable(&led_select_command_);
-        /*mmap_.registerVariable(&led_color_command_r_);
-        mmap_.registerVariable(&led_color_command_g_);
-        mmap_.registerVariable(&led_color_command_b_);
+        mmap_.registerVariable(&led_select_);
+        mmap_.registerVariable(&led_color_);
         mmap_.registerVariable(&led_brightness_);
-        mmap_.registerVariable(&led_cmd_);*/
+        mmap_.registerVariable(&led_cmd_);
         mmap_.init();
 
         /*
         * Load default values
         */
-        /*DEBUG_PRINTLN("Load default");
+        DEBUG_PRINTLN("Load default");
         mmap_.load(); // Load values from EEPROM
-        DEBUG_PRINT("data: ");DEBUG_PRINTLN(servo_select_command_.data);
-        DEBUG_PRINT("data: ");DEBUG_PRINTLN(servo_pos_command_.data);
-        DEBUG_PRINT("data: ");DEBUG_PRINTLN(led_select_command_.data);
-        DEBUG_PRINT("data: ");DEBUG_PRINTLN(led_color_command_.data);
-        //DEBUG_PRINT("data: ");DEBUG_PRINTLN(led_update_color_command_.data);*/
 
         /*
         * Read sensor data
@@ -184,7 +174,7 @@ class HeadDXL: public DeviceDXL<SERVO_MODEL, SERVO_FIRMWARE, SERVO_MMAP_SIZE>
         delay(5);
         LEDs_ring2->show();
         delay(5);
-        DEBUG_PRINTLN("LEDs_rings->show()");
+        // DEBUG_PRINTLN("LEDs_rings->show()");
     }
 
     void showRing(uint8_t select, Adafruit_NeoPixel *ring, uint8_t R_colors[], uint8_t G_colors[], uint8_t B_colors[], uint8_t size)
@@ -206,9 +196,9 @@ class HeadDXL: public DeviceDXL<SERVO_MODEL, SERVO_FIRMWARE, SERVO_MMAP_SIZE>
         //delay(5);
     }
 
-    uint8_t getRColor(uint8_t rgb_code){ return 36U*((rgb_code & 0b11100000)>>5);}
-    uint8_t getGColor(uint8_t rgb_code){ return 36U*((rgb_code & 0b00011100)>>2);}
-    uint8_t getBColor(uint8_t rgb_code){ return 72U*((rgb_code & 0b00000011)>>0);}
+    uint8_t decodeRColor(uint8_t rgb8bit_encode){ return 36U*((rgb8bit_encode & 0b11100000)>>5);}
+    uint8_t decodeGColor(uint8_t rgb8bit_encode){ return 36U*((rgb8bit_encode & 0b00011100)>>2);}
+    uint8_t decodeBColor(uint8_t rgb8bit_encode){ return 85U*((rgb8bit_encode & 0b00000011)>>0);}
 
     void swapServo(Servo *servo, uint8_t angle_min, uint8_t angle_max)
     {
@@ -226,22 +216,34 @@ class HeadDXL: public DeviceDXL<SERVO_MODEL, SERVO_FIRMWARE, SERVO_MMAP_SIZE>
 
     void updateServos(Servo servos[])
     {
-        if (servo_cmd_.data == SERVO0_POS) //when required update servo 1
-              servos[0].write(servo0_pos_command_.data);
-        else if (servo_cmd_.data == SERVO1_POS) //when required update servo 2
-              servos[1].write(servo1_pos_command_.data);
-        else if (servo_cmd_.data == SERVO2_POS) //when required update servo 3
-              servos[2].write(servo2_pos_command_.data);
-        else if (servo_cmd_.data == SERVO3_POS) //when required update servo 4
-              servos[3].write(servo3_pos_command_.data);
-        else if (servo_cmd_.data == SERVO4_POS) //when required update servo 5
-              servos[4].write(servo4_pos_command_.data);
-        else if (servo_cmd_.data == SERVO5_POS) //when required update servo 6
-              servos[5].write(servo5_pos_command_.data);
-        else if (servo_cmd_.data == SERVO1_SWAP)   //predefined behavior function
+        if (servo_cmd_.data == SERVO0_POS){ //when required update servo 1
+              servos[0].write(servo0_pos_.data);
+              servo_cmd_.data = SERVOS_INACTIVE;
+        }
+        else if (servo_cmd_.data == SERVO1_POS){ //when required update servo 2
+              servos[1].write(servo1_pos_.data);
+              servo_cmd_.data = SERVOS_INACTIVE;
+        }
+        else if (servo_cmd_.data == SERVO2_POS){ //when required update servo 3
+              servos[2].write(servo2_pos_.data);
+              servo_cmd_.data = SERVOS_INACTIVE;
+        }
+        else if (servo_cmd_.data == SERVO3_POS){ //when required update servo 4
+              servos[3].write(servo3_pos_.data);
+              servo_cmd_.data = SERVOS_INACTIVE;
+        }
+        else if (servo_cmd_.data == SERVO4_POS){ //when required update servo 5
+              servos[4].write(servo4_pos_.data);
+              servo_cmd_.data = SERVOS_INACTIVE;
+        }
+        else if (servo_cmd_.data == SERVO5_POS){ //when required update servo 6
+              servos[5].write(servo5_pos_.data);
+              servo_cmd_.data = SERVOS_INACTIVE;
+        }
+        /*else if (servo_cmd_.data == SERVO1_SWAP)   //predefined behavior function
         {
             swapServo(&servos[1], 115, 135);
-        }
+        }*/
         /*else    //Inactive
         {
             DEBUG_PRINT("No command for servos");
@@ -250,20 +252,30 @@ class HeadDXL: public DeviceDXL<SERVO_MODEL, SERVO_FIRMWARE, SERVO_MMAP_SIZE>
 
     void updateLEDs(Adafruit_NeoPixel LEDs[])
     {
-        /*if (led_cmd_.data == SHOW_R1){  //Lower bytes array of colors updated, show left eye colors
+        if (led_cmd_.data == SHOW_R1){  //Lower bytes array of colors updated, show left eye colors
             showRing(1, &LEDs[0], R_colors_, G_colors_, B_colors_, 20);
-            //DEBUG_PRINTLN("EXEC: show command (0xFE)");
+            led_cmd_.data = LEDS_INACTIVE;
+            DEBUG_PRINTLN("EXEC: show command SHOW_R1");
         }
         else if (led_cmd_.data == SHOW_R2){  //Upper bytes of colors updated, show right eye colors
-            showRing(2, &LEDs[0], R_colors_, G_colors_, B_colors_, 20);
-            //DEBUG_PRINTLN("EXEC: show command (0xFD)");
+            showRing(2, &LEDs[1], R_colors_, G_colors_, B_colors_, 20);
+            led_cmd_.data = LEDS_INACTIVE;
+            DEBUG_PRINTLN("EXEC: show command SHOW_R2");
+        }
+        else if (led_cmd_.data == CHANGE_BRIGHT){  //Change brighness of both Rings
+            LEDs[0].setBrightness(led_brightness_.data);
+            LEDs[1].setBrightness(led_brightness_.data);
+            showRing(1, &LEDs[0], R_colors_, G_colors_, B_colors_, 20);
+            showRing(2, &LEDs[1], R_colors_, G_colors_, B_colors_, 20);
+            led_cmd_.data = LEDS_INACTIVE;
+            DEBUG_PRINTLN("EXEC: command CHANGE_BRIGHT");
         }
         else if (led_cmd_.data == UPDATE_C){ //updating array of colors
-            R_colors_[led_select_command_.data] = led_color_command_r_.data;
-            G_colors_[led_select_command_.data] = led_color_command_g_.data;
-            B_colors_[led_select_command_.data] = led_color_command_b_.data;
-            //DEBUG_PRINTLN("EXEC: change color command (0xFC)");
-        }*/
+            R_colors_[led_select_.data] = decodeRColor(led_color_.data);
+            G_colors_[led_select_.data] = decodeGColor(led_color_.data);
+            B_colors_[led_select_.data] = decodeBColor(led_color_.data);
+            DEBUG_PRINTLN("EXEC: change color command UPDATE_C");
+        }
         /*else    //Inactive, Leds commands are not used in this case
             //DEBUG_PRINTLN("Led command non used");
         */
@@ -291,7 +303,7 @@ class HeadDXL: public DeviceDXL<SERVO_MODEL, SERVO_FIRMWARE, SERVO_MMAP_SIZE>
           0, 0, 0, 0,               //17-20
      
           0, 0, 0, 0, 0, 0, 153, 153, //21-28
-          153, 0, 0, 0, 153, 153, 153, 153,     //29-36
+          153, 0, 0, 0, 0, 153, 153, 153,     //29-36
           0, 0, 0, 0};              //37-40
         uint8_t G_colors_default[40] = {
           153, 153, 153, 0, 0, 0, 0, 153,         //1-8
@@ -299,7 +311,7 @@ class HeadDXL: public DeviceDXL<SERVO_MODEL, SERVO_FIRMWARE, SERVO_MMAP_SIZE>
           0, 0, 0, 0,                 //17-20
      
           0, 0, 0, 0, 0, 0, 153, 153,         //21-28
-          153, 0, 0, 0, 153, 153, 153, 153, //29-36
+          153, 0, 0, 0, 0, 153, 153, 153, //29-36
           0, 0, 0, 0};                //37-40
         uint8_t B_colors_default[40] = {
           0, 0, 0, 0, 0, 0, 0, 0, //1-8
@@ -343,21 +355,19 @@ class HeadDXL: public DeviceDXL<SERVO_MODEL, SERVO_FIRMWARE, SERVO_MMAP_SIZE>
     //Servo *servos_[5]; //puntero a objeto Servo
     
         // SERVOs variables
-    MMap::Integer<UInt8, 0U, 170U, 0U>::type servo0_pos_command_;
-    MMap::Integer<UInt8, 0U, 170U, 0U>::type servo1_pos_command_;
-    MMap::Integer<UInt8, 0U, 170U, 0U>::type servo2_pos_command_;
-    MMap::Integer<UInt8, 0U, 170U, 0U>::type servo3_pos_command_;
-    MMap::Integer<UInt8, 0U, 170U, 0U>::type servo4_pos_command_;
-    MMap::Integer<UInt8, 0U, 170U, 0U>::type servo5_pos_command_;
-    MMap::Integer<UInt8, 0U, 20U, 20U>::type servo_cmd_;
+    MMap::Integer<UInt8, 0U, 170U, 0U>::type servo0_pos_;
+    MMap::Integer<UInt8, 0U, 170U, 0U>::type servo1_pos_;
+    MMap::Integer<UInt8, 0U, 170U, 0U>::type servo2_pos_;
+    MMap::Integer<UInt8, 0U, 170U, 0U>::type servo3_pos_;
+    MMap::Integer<UInt8, 0U, 170U, 0U>::type servo4_pos_;
+    MMap::Integer<UInt8, 0U, 170U, 0U>::type servo5_pos_;
+    MMap::Integer<UInt8, 0U, 20U, 21U>::type servo_cmd_;
 
     // LEDs variables
-    MMap::Integer<UInt8, 0U, 255U, 0U>::type led_select_command_;
-    /*MMap::Integer<UInt8, 0U, 255U, 0U>::type led_color_command_r_;
-    MMap::Integer<UInt8, 0U, 255U, 0U>::type led_color_command_g_;
-    MMap::Integer<UInt8, 0U, 255U, 0U>::type led_color_command_b_;
-    MMap::Integer<UInt8, 1U, 255U, 15U>::type led_brightness_;  
-    MMap::Integer<UInt8, 0U, 255U, 0U>::type led_cmd_;*/
+    MMap::Integer<UInt8, 0U, 255U, 0U>::type led_select_;
+    MMap::Integer<UInt8, 0U, 255U, 0U>::type led_color_;
+    MMap::Integer<UInt8, 1U, 255U, 15U>::type led_brightness_;
+    MMap::Integer<UInt8, 0U, 255U, 0U>::type led_cmd_;
     
     //LEDs colors
     uint8_t R_colors_[40] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
@@ -402,9 +412,7 @@ void setup() {
 void loop() {
     // Update msg buffer
     while (Serial3.available()){
-        uint8_t data = Serial3.read();
-        serialDxl.process(data);
-        // DEBUG_PRINTLN("data: ");DEBUG_PRINTLN(data);
+        serialDxl.process(Serial3.read());
     }
 
     head_dxl.mmap_.deserialize();
