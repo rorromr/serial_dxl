@@ -45,6 +45,7 @@ class DeviceDXL {
       mmap_.registerVariable(&id_);
       mmap_.registerVariable(&baudrate_);
       mmap_.registerVariable(&return_delay_);
+      // DEBUG_PRINT("DEV_ID: ");DEBUG_PRINTLN(id_.data);
     }
 
     void reset()
@@ -126,10 +127,10 @@ class SerialDXL
      */
     void process(uint8_t data)
     {
-      DEBUG_PRINTLN(data);
+      // DEBUG_PRINTLN(data);
       // Check message
-/*      uint32_t now = micros();
-      if (now - last_call_ > 100)
+      uint32_t now = micros();
+      if (now - last_call_ > 9000)
       {
         // Reset states
         DEBUG_PRINTLN("RESET MSG");
@@ -139,7 +140,7 @@ class SerialDXL
         msgChecksum_ = 0;
         msgFinish_ = 0;
       }
-      last_call_ = now;*/
+      last_call_ = now;
 
       switch(msgState_)
       {
@@ -154,6 +155,8 @@ class SerialDXL
         case 2: // ID
           // Check error
           msgState_ = data == device_->id_.data ? 3 : 0;
+          // DEBUG_PRINT("DEV_ID: ");DEBUG_PRINTLN(device_->id_.data);
+          // DEBUG_PRINT("RECEIVED_ID: ");DEBUG_PRINTLN(data);
           break;
           
         case 3: // Length
